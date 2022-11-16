@@ -8,7 +8,6 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    # only one of the following two arguments is allowed at a time
     source_file = parser.add_mutually_exclusive_group(required=True)
     source_file.add_argument("-u", "--url", help="URL of the video to be transcribed")
     source_file.add_argument("-f", "--filename", help="Path to the video file to be transcribed")
@@ -32,7 +31,6 @@ def speech_to_text(url=None, filename=None, model="base", lang="en", video_forma
     # download video
     if url is not None:
         audio_dl = YoutubeDL({'format': video_format})
-        # audio_dl.extract_info(url)
         filename = audio_dl.prepare_filename(audio_dl.extract_info(url))
 
     # load whisper model and send it to GPU, transcribe audio to text
@@ -43,8 +41,6 @@ def speech_to_text(url=None, filename=None, model="base", lang="en", video_forma
     filename = filename.replace(Path(filename).suffix, '.srt')
     create_srt_simple(filename, result["segments"], output_format)
     return filename
-    # write srt file
-    # exit(0)
 
     # srt = create_srt(result)
     # write_subtitle_file(filename, srt)

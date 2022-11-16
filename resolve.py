@@ -3,20 +3,10 @@ import argparse
 import subtitler
 import time
 
-# class Task:
-#     render_job = None
-#     render_audio = None
-#     subtitles = None
-#     media = None
-
-
 resolve = dvr_script.scriptapp("Resolve")
 audio_output_path = r"v:\video"
 input_video_path = r"c:\code\python\Subtitler\Maailman vesipäivä - Pohjavesi-hqnIGzR8jU0.mp4"
 pm = resolve.GetProjectManager()
-# project = pm.GetCurrentProject()
-# timeline = project.GetCurrentTimeline()
-# mediapool = project.GetMediaPool()
 
 task = dict(render_job=None, render_audio=None, subtitles=None, media=None, project=None, timeline=None, status=0,
             completion=0, audio_path=None, mediapool=None)
