@@ -50,7 +50,7 @@ def check_if_render_complete(t):
 
 
 def create_subtitles(t):
-    return subtitler.speech_to_text(filename=t["audio_path"], model="medium", lang="en", output_format="srt")
+    return subtitler.speech_to_text(filename=t["audio_path"], model="medium", output_format="srt", device="cuda", translate=True)
 
 
 def arg_parse():
