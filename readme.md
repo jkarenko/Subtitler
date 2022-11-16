@@ -1,10 +1,10 @@
 # Create subtitles for your videos with ease.
 ## Installation
 ### Requirements
-- Python 3.10+
+- Python 3.8
 - ffmpeg
 - pytorch-cuda
-- OpenAI Whisper
+- OpenAI Whisper through pywhisper
 
 ### Install
 ```bash
@@ -24,17 +24,17 @@ python subtitler.py
 - there's repetition in the transcript for an unknown reason
 
 ## TODO
-- [ ] Add a progress bar
-- [ ] Add a way to specify the model
-- [ ] Add a way to specify the language
-- [ ] Add a way to specify the video
-- [ ] Add a way to specify the output file
-- [ ] Add a way to specify the output format
-- [ ] Add a way to specify the output language
+- [x] Add a progress bar
+- [x] Add a way to specify the model
+- [x] Add a way to specify the video
+- [x] Add a way to specify the output file
+- [x] Add a way to specify the output format
+- [x] Add a way to specify the output language
 
 
 ## Credits
 - [OpenAI Whisper](https://github.com/openai/whisper)
+- [pywhisper](https://github.com/fcakyon/pywhisper)
 - [youtube-dl](https://github.com/ytdl-org/youtube-dl/)
 - [ffmpeg](https://ffmpeg.org/)
 - [pytorch](https://pytorch.org/)
