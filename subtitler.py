@@ -1,4 +1,4 @@
-from youtube_dl import YoutubeDL
+from yt_dlp import YoutubeDL
 import pywhisper
 from pywhisper.utils import write_srt, write_vtt, write_txt
 import datetime
@@ -6,8 +6,16 @@ from pathlib import Path
 import argparse
 from spleeter.audio.adapter import AudioAdapter
 from spleeter.separator import Separator
+
 import matchering as mg
 from pydub import AudioSegment
+
+import os
+import openai
+
+models = ("tiny", "base", "small", "medium", "large")
+openai.organization = os.getenv("OPENAI_ORG")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
 def parse_args():
@@ -24,6 +32,7 @@ def parse_args():
     parser.add_argument("--subtitles", action="store_true", help="Make subtitles")
     parser.add_argument("--prompt", type=str, default="", help="Initial prompt to help the model")
     parser.add_argument("--split", action="store_true", help="Use spleeter to separate audio")
+    parser.add_argument("--summary", action="store_true", help="Summarise the inferred text")
     args = parser.parse_args()
     if args.device not in ["cpu", "cuda"]:
         raise ValueError("Invalid device")
@@ -33,12 +42,30 @@ def parse_args():
     return args
 
 
-models = ("tiny", "base", "small", "medium", "large")
+def summarise_text(text,
+                   max_tokens=1000,
+                   temperature=0.7,
+                   top_p=1.0,
+                   frequency_penalty=0.0,
+                   presence_penalty=0.0,
+                   stop="###"):
+    response = openai.Completion.create(
+        model="text-davinci-003",
+        prompt=f"Write a concise summary of the following\n\n{text}\n{stop}",
+        temperature=temperature,
+        max_tokens=max_tokens,
+        top_p=top_p,
+        frequency_penalty=frequency_penalty,
+        presence_penalty=presence_penalty,
+        stop=stop
+    )
+    return response.choices[0].text
 
 
 def download_video(url, video_format):
-    audio_dl = YoutubeDL({'format': video_format})
-    filename = audio_dl.prepare_filename(audio_dl.extract_info(url))
+    with YoutubeDL({'format': video_format}) as ydl:
+        # info = ydl.extract_info(url, download=False)
+        filename = ydl.prepare_filename(ydl.extract_info(url))
     print(f"Video downloaded to {filename}")
     return filename
 
@@ -56,19 +83,28 @@ def spleeter_separate(filename):
 
 
 def speech_to_text(url=None, filename=None, lang=None, model="base", video_format="best", audio_only=False,
-                   output_format="srt", device="cuda", translate=False, subtitles=False, prompt="", split=False):
+                   output_format="srt", device="cuda", translate=False, subtitles=False, prompt="", split=False,
+                   summary=False):
     if url is None and filename is None:
         raise ValueError("Either url or filename must be specified")
 
     if url is not None:
         # download video
-        filename = download_video(url, video_format if not audio_only else "bestaudio")
+        filename = download_video(url, "bestaudio" if audio_only else video_format)
 
     if split:
         # separate audio
         spleeter_separate(filename)
 
     filename = make_subtitles(device, filename, lang, model, output_format, prompt, subtitles, translate)
+
+    if summary:
+        with open(filename + ".txt", "r", encoding="utf-8") as f:
+            text = f.read()
+        summary = summarise_text(text)
+        with open(filename + ".summary.txt", "w", encoding="utf-8") as f:
+            f.write(summary)
+        print(f"Summary written to {filename}.summary.txt")
 
     return filename
 
@@ -83,15 +119,17 @@ def make_subtitles(device, filename, lang, model, output_format, prompt, subtitl
         result = model.transcribe(language=lang, audio=filename, verbose=True,
                                   condition_on_previous_text=True, initial_prompt=prompt,
                                   temperature=0.0, task="translate" if translate else "transcribe")
-        filename = filename.replace(Path(filename).suffix, '.srt')
+        filename = filename.replace(Path(filename).suffix, "")
         create_srt_simple(filename, result["segments"], output_format)
         print(f"Subtitles written to {filename}")
     return filename
 
 
 def create_srt_simple(filename, result, output_format):
-    with open(filename, "w", encoding="utf-8") as f:
+    with open(filename + ".srt", "w", encoding="utf-8") as f:
         write_srt(result, f)
+    with open(filename + ".txt", "w", encoding="utf-8") as f:
+        write_txt(result, f)
 
 
 def write_subtitle_file(filename, data):
