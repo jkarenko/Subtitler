@@ -6,15 +6,23 @@
 - pytorch-cuda
 - OpenAI Whisper through pywhisper
 
-### Install
+### Install locally
 ```bash
 pip install torch==1.13.0+cu116 -f https://download.pytorch.org/whl/cu116/
 pip install git+https://github.com/openai/whisper.git 
 ```
 
+### Install with Docker
+```bash
+docker build -t subtitler-0.1 .
+docker run --name subtitler-0.1 -m 10G --cpus 2 --gpus all subtitler-0.1 
+```
+
 ## Usage
 ### Create a subtitle file from video
 ```bash
+export OPENAI_API_KEY=<your-openai-api-key>
+export OPENAI_ORG=<your-openai-org>
 python subtitler.py
 ```
 
