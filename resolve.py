@@ -5,7 +5,6 @@ import time
 
 resolve = dvr_script.scriptapp("Resolve")
 audio_output_path = r"v:\video"
-input_video_path = r"c:\code\python\Subtitler\Maailman vesipäivä - Pohjavesi-hqnIGzR8jU0.mp4"
 pm = resolve.GetProjectManager()
 
 task = dict(render_job=None, render_audio=None, subtitles=None, media=None, project=None, timeline=None, status=0,

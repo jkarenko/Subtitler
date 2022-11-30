@@ -43,7 +43,7 @@ def parse_args():
 
 
 def summarise_text(text,
-                   max_tokens=1000,
+                   max_tokens=200,
                    temperature=0.7,
                    top_p=1.0,
                    frequency_penalty=0.0,
