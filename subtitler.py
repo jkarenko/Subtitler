@@ -7,8 +7,8 @@ import argparse
 from spleeter.audio.adapter import AudioAdapter
 from spleeter.separator import Separator
 
-import matchering as mg
-from pydub import AudioSegment
+# import matchering as mg
+# from pydub import AudioSegment
 
 import os
 import openai
