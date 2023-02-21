@@ -3,8 +3,8 @@ yt_dlp
 # torchvision
 # torchaudio
 pysndfile
-pywhisper~=1.0.6
+pywhisper
 # matchering~=2.0.6
-openai~=0.25.0
-spleeter~=2.3.2
+openai
+spleeter
 # pydub~=0.25.1
