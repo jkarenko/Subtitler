@@ -1,3 +1,5 @@
+import math
+
 from yt_dlp import YoutubeDL
 import pywhisper
 from pywhisper.utils import write_srt, write_vtt, write_txt
@@ -9,6 +11,8 @@ import argparse
 import keyring
 # import os
 import openai
+from summarizer import Summarizer, TransformerSummarizer
+import time
 
 # import matchering as mg
 # from pydub import AudioSegment
@@ -37,6 +41,10 @@ def parse_args():
     parser.add_argument("--prompt", type=str, default="", help="Initial prompt to help the model")
     parser.add_argument("--split", action="store_true", help="Use spleeter to separate audio")
     parser.add_argument("--summary", action="store_true", help="Summarise the inferred text")
+    summariser_model = parser.add_mutually_exclusive_group()
+    summariser_model.add_argument("--bert", action="store_true", help="Use BERT to summarise the inferred text")
+    summariser_model.add_argument("--gpt2", action="store_true", help="Use GPT2 to summarise the inferred text")
+    summariser_model.add_argument("--xlnet", action="store_true", help="Use XLNet to summarise the inferred text")
     args = parser.parse_args()
 
     if args.device not in ["cpu", "cuda"]:
@@ -48,15 +56,37 @@ def parse_args():
 
 
 def summarise_text(text,
-                   max_tokens=500,
+                   max_tokens=2048,
                    temperature=0.1,
                    top_p=1.0,
                    frequency_penalty=0.0,
                    presence_penalty=0.0,
                    stop="###"):
+    if args.bert:
+        model = Summarizer()
+        return model(text, min_length=30, max_length=100)
+    if args.gpt2:
+        model = TransformerSummarizer(transformer_type="GPT2", transformer_model_key="gpt2-medium")
+        return "".join(model(text, min_length=30, max_length=100))
+    if args.xlnet:
+        model = TransformerSummarizer(transformer_type="XLNet", transformer_model_key="xlnet-base-cased")
+        return "".join(model(text, min_length=30, max_length=100))
+    # count words in text, 1 token ~= 0.75 words, split into parts if tokens + max_tokens >= 4096
+    words_to_tokens_conversion_rate = .75
+    words_per_part = math.floor(max_tokens * words_to_tokens_conversion_rate)
+    words = text.split()
+    num_parts = math.ceil(len(words) / words_per_part)
+    summaries = []
+    if num_parts > 1:
+        print(f"Text too long, splitting into {num_parts} parts")
+        text_parts = [" ".join(words[i * words_per_part:(i + 1) * words_per_part]) for i in range(num_parts)]
+        summaries = [summarise_text(part) for part in text_parts]
+    if summaries:
+        text = "\n".join(summaries)
     response = openai.Completion.create(
         model="text-davinci-003",
-        prompt=f"{text}\nTo re-iterate, these are the steps:{stop}",
+        # prompt=f"{text}\nTo re-iterate, these are the steps:{stop}",
+        prompt=f"{text}\nIn summary:{stop}",
         temperature=temperature,
         max_tokens=max_tokens,
         top_p=top_p,
@@ -89,7 +119,7 @@ def spleeter_separate(filename):
 
 def speech_to_text(url=None, filename=None, lang=None, model="base", video_format="best", audio_only=False,
                    output_format="srt", device="cuda", translate=False, subtitles=False, prompt="", split=False,
-                   summary=False, text_file=None):
+                   summary=False, text_file=None, **kwargs):
     if text_file is not None:
         with open(text_file, "r", encoding="utf-8") as f:
             text = f.read()
@@ -165,7 +195,10 @@ def create_srt_data(result):
 
 
 def main(**kwargs):
+    start = time.time()
     speech_to_text(**kwargs)
+    end = time.time()
+    print(f"Time elapsed: {end - start:.2f} seconds")
 
 
 if __name__ == "__main__":
